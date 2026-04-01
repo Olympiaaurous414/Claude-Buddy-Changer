@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude Buddy Changer</title>
+  <style>
+    :root {
+      --bg: #11161d;
+      --panel: #18212b;
+      --line: #2c3a48;
+      --text: #d9e6f2;
+      --muted: #8ca1b5;
+      --accent: #9ad0ff;
+      --good: #b9f08b;
+      --rare: #ffd479;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      background: radial-gradient(circle at top, #1a2330 0%, var(--bg) 55%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+    h1, h2, p { margin: 0; }
+    .hero {
+      margin-bottom: 24px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      background: rgba(24, 33, 43, 0.92);
+    }
+    .hero p { margin-top: 8px; color: var(--muted); line-height: 1.6; }
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 12px;
+    }
+    .lang-switch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      background: rgba(24, 33, 43, 0.92);
+    }
+    .lang-switch select {
+      width: auto;
+      margin: 0;
+      min-width: 90px;
+      padding: 6px 8px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      background: rgba(24, 33, 43, 0.92);
+      padding: 16px;
+    }
+    .panel h2 {
+      font-size: 15px;
+      margin-bottom: 14px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      background: #10161d;
+      border: 1px solid var(--line);
+      color: var(--text);
+      font: inherit;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    button {
+      width: 100%;
+      padding: 11px 14px;
+      margin-top: 4px;
+      border: 1px solid #79b3e6;
+      background: #1d2b39;
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
+    }
+    button:hover { background: #233547; }
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      margin-top: 10px;
+    }
+    .binary-box {
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      background: #10161d;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .binary-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .binary-actions button {
+      margin: 0;
+    }
+    .preview-card {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 18px;
+      border: 1px solid var(--line);
+      padding: 16px;
+      margin-bottom: 18px;
+      background: #111922;
+    }
+    .ascii {
+      white-space: pre;
+      min-height: 180px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      color: var(--good);
+      background: #0d1319;
+      line-height: 1.25;
+      font-size: 16px;
+      overflow: auto;
+      position: relative;
+      transition: box-shadow 180ms ease, border-color 180ms ease, transform 180ms ease;
+    }
+    .ascii.shiny {
+      color: #fff7b0;
+      border-color: #f3d46c;
+      box-shadow: 0 0 0 1px rgba(243, 212, 108, 0.15), 0 0 18px rgba(243, 212, 108, 0.18);
+    }
+    .ascii.shiny::after {
+      content: "✦";
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      color: #ffe27a;
+      text-shadow: 0 0 8px rgba(255, 226, 122, 0.65);
+      animation: sparkle 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes sparkle {
+      from { opacity: 0.45; transform: scale(0.9) rotate(-8deg); }
+      to { opacity: 1; transform: scale(1.15) rotate(8deg); }
+    }
+    .meta-line {
+      margin-bottom: 8px;
+      color: var(--muted);
+    }
+    .meta-line strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+    .stats {
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+    }
+    .stat {
+      display: grid;
+      grid-template-columns: 110px 1fr 36px;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+    }
+    .bar {
+      height: 10px;
+      border: 1px solid var(--line);
+      background: #0d1319;
+    }
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #8fd48f, #c8f07e);
+    }
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .result-card {
+      border: 1px solid var(--line);
+      background: #111922;
+      padding: 14px;
+    }
+    .result-card .salt {
+      color: var(--rare);
+      margin-bottom: 10px;
+      word-break: break-all;
+    }
+    .result-card button {
+      margin-top: 12px;
+    }
+    .status {
+      margin-bottom: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .preview-tools {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      background: #10161d;
+      color: var(--muted);
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .preview-card { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="lang-switch">
+        <span id="langLabel">Language</span>
+        <select id="langSelect">
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+        </select>
+      </div>
+    </div>
+    <div class="hero">
+      <h1 id="heroTitle">Claude Buddy Changer</h1>
+      <p id="heroDesc">Use the form on the left to preview your current buddy or search for salts that generate a buddy you prefer. Then click any result to preview it visually.</p>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2 id="controlsTitle">Controls</h2>
+        <label for="userId" id="userIdLabel">User ID</label>
+        <input id="userId" placeholder="Auto-detected from local Claude config">
+
+        <label for="salt" id="saltLabel">Salt for preview</label>
+        <input id="salt" placeholder="friend-2026-401">
+
+        <button id="previewBtn" type="button">Preview Buddy</button>
+
+        <div class="hint" id="userHint">If you leave User ID blank, the page will use the one found in your local Claude config.</div>
+
+        <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;">
+
+        <label for="species" id="speciesLabel">Species</label>
+        <select id="species"></select>
+
+        <div class="row">
+          <div>
+            <label for="rarity" id="rarityLabel">Rarity</label>
+            <select id="rarity"></select>
+          </div>
+          <div>
+            <label for="eye" id="eyeLabel">Eye</label>
+            <select id="eye"></select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="hat" id="hatLabel">Hat</label>
+            <select id="hat"></select>
+          </div>
+          <div>
+            <label for="total" id="attemptsLabel">Search attempts</label>
+            <input id="total" type="number" value="500000">
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="minStat" id="minStatLabel">Min stat</label>
+            <input id="minStat" placeholder="CHAOS:80">
+          </div>
+          <div>
+            <label for="prefix" id="prefixLabel">Salt prefix</label>
+            <input id="prefix" value="lab-">
+          </div>
+        </div>
+
+        <label style="display:flex;align-items:center;gap:8px;margin:10px 0 14px;">
+          <input id="shiny" type="checkbox" style="width:auto;margin:0;">
+          <span id="shinyLabel">Shiny only</span>
+        </label>
+
+        <button id="searchBtn" type="button">Search Matching Buddies</button>
+        <div id="binaryStatus"></div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <h2 id="previewTitle">Preview</h2>
+          <div class="status" id="previewStatus">Loading local Claude metadata...</div>
+          <div id="previewContainer"></div>
+        </div>
+
+        <div class="panel" style="margin-top:20px;">
+          <h2 id="resultsTitle">Search Results</h2>
+          <div class="status" id="searchStatus">No search yet.</div>
+          <div class="results" id="results"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const i18n = {
+      en: {
+        langLabel: 'Language',
+        heroTitle: 'Claude Buddy Changer',
+        heroDesc: 'Use the form on the left to preview your current buddy or search for salts that generate a buddy you prefer. Then click any result to preview it visually.',
+        controlsTitle: 'Controls',
+        userIdLabel: 'User ID',
+        userIdPlaceholder: 'Auto-detected from local Claude config',
+        saltLabel: 'Salt for preview',
+        previewBtn: 'Preview Buddy',
+        userHint: 'If you leave User ID blank, the page will use the one found in your local Claude config.',
+        speciesLabel: 'Species',
+        rarityLabel: 'Rarity',
+        eyeLabel: 'Eye',
+        hatLabel: 'Hat',
+        attemptsLabel: 'Search attempts',
+        minStatLabel: 'Min stat',
+        prefixLabel: 'Salt prefix',
+        shinyLabel: 'Shiny only',
+        searchBtn: 'Search Matching Buddies',
+        binaryTitle: 'Claude Binary',
+        binaryMissing: 'Claude binary not detected on this machine.',
+        binaryPath: 'Path',
+        binarySalt: 'Current salt',
+        binaryOriginal: 'Recorded original salt',
+        binaryRestore: 'Restore Original',
+        binaryRefresh: 'Refresh Binary Status',
+        useThisBuddy: 'Use This Buddy',
+        applySuccess: 'Buddy applied. Restart Claude Code to see the change.',
+        restoreSuccess: 'Original salt restored.',
+        previewTitle: 'Preview',
+        resultsTitle: 'Search Results',
+        loadingMeta: 'Loading local Claude metadata...',
+        loadedMeta: 'Loaded your local Claude user ID. Click Preview Buddy to see the current result.',
+        detectError: 'Could not auto-detect user ID:',
+        previewing: 'Generating preview...',
+        previewUpdated: 'Preview updated.',
+        animationOn: 'Animation on',
+        animationOff: 'Animation off',
+        blinkOn: 'Blink on',
+        blinkOff: 'Blink off',
+        searching: 'Searching...',
+        noSearchYet: 'No search yet.',
+        noMatches: 'No matches found. Increase search attempts or relax the filters.',
+        foundMatches: (count, searched) => `Found ${count} matches in ${searched} attempts. Click Preview on any card.`,
+        any: 'Any',
+        shinyYes: 'yes',
+        shinyNo: 'no',
+        resultShiny: 'shiny',
+        resultEyeHat: (eye, hat) => `eye ${eye} / hat ${hat}`,
+        resultTopStat: (name, value) => `top stat ${name} ${value}`,
+        previewThis: 'Preview This',
+        userIdMeta: 'User ID',
+        saltMeta: 'Salt',
+        speciesMeta: 'Species',
+        rarityMeta: 'Rarity',
+        eyeMeta: 'Eye',
+        hatMeta: 'Hat',
+        shinyMeta: 'Shiny',
+      },
+      zh: {
+        langLabel: '语言',
+        heroTitle: 'Claude Buddy Changer',
+        heroDesc: '左侧可以先预览当前宠物，也可以按条件搜索更喜欢的 salt。找到结果后，点击卡片上的按钮即可在上方直接预览。',
+        controlsTitle: '控制面板',
+        userIdLabel: '用户 ID',
+        userIdPlaceholder: '自动从本机 Claude 配置读取',
+        saltLabel: '预览用 Salt',
+        previewBtn: '预览宠物',
+        userHint: '如果留空，页面会自动使用你本机 Claude 配置里的 user ID。',
+        speciesLabel: '物种',
+        rarityLabel: '稀有度',
+        eyeLabel: '眼睛',
+        hatLabel: '帽子',
+        attemptsLabel: '搜索次数',
+        minStatLabel: '最低属性',
+        prefixLabel: 'Salt 前缀',
+        shinyLabel: '只看 Shiny',
+        searchBtn: '搜索符合条件的宠物',
+        binaryTitle: 'Claude 二进制',
+        binaryMissing: '当前机器未检测到 Claude 可执行文件。',
+        binaryPath: '路径',
+        binarySalt: '当前 Salt',
+        binaryOriginal: '已记录的原始 Salt',
+        binaryRestore: '恢复原始 Salt',
+        binaryRefresh: '刷新二进制状态',
+        useThisBuddy: '使用这只宠物',
+        applySuccess: '已应用该 Buddy。重启 Claude Code 后生效。',
+        restoreSuccess: '已恢复原始 Salt。',
+        previewTitle: '预览',
+        resultsTitle: '搜索结果',
+        loadingMeta: '正在加载本机 Claude 信息...',
+        loadedMeta: '已读取到你本机的 Claude user ID。点击“预览宠物”即可查看当前结果。',
+        detectError: '无法自动读取 user ID：',
+        previewing: '正在生成预览...',
+        previewUpdated: '预览已更新。',
+        animationOn: '动画已开',
+        animationOff: '动画已关',
+        blinkOn: '眨眼已开',
+        blinkOff: '眨眼已关',
+        searching: '搜索中...',
+        noSearchYet: '还没有搜索。',
+        noMatches: '没有找到结果。请增加搜索次数或放宽筛选条件。',
+        foundMatches: (count, searched) => `已在 ${searched} 次尝试中找到 ${count} 个结果。点击卡片按钮即可预览。`,
+        any: '不限',
+        shinyYes: '是',
+        shinyNo: '否',
+        resultShiny: '闪光',
+        resultEyeHat: (eye, hat) => `眼睛 ${eye} / 帽子 ${hat}`,
+        resultTopStat: (name, value) => `最高属性 ${name} ${value}`,
+        previewThis: '预览这只',
+        userIdMeta: '用户 ID',
+        saltMeta: 'Salt',
+        speciesMeta: '物种',
+        rarityMeta: '稀有度',
+        eyeMeta: '眼睛',
+        hatMeta: '帽子',
+        shinyMeta: 'Shiny',
+      },
+    };
+
+    const optionLabels = {
+      zh: {
+        common: '普通',
+        uncommon: '不常见',
+        rare: '稀有',
+        epic: '史诗',
+        legendary: '传说',
+        duck: '鸭子',
+        goose: '鹅',
+        blob: '团子',
+        cat: '猫',
+        dragon: '龙',
+        octopus: '章鱼',
+        owl: '猫头鹰',
+        penguin: '企鹅',
+        turtle: '乌龟',
+        snail: '蜗牛',
+        ghost: '幽灵',
+        axolotl: '美西螈',
+        capybara: '水豚',
+        cactus: '仙人掌',
+        robot: '机器人',
+        rabbit: '兔子',
+        mushroom: '蘑菇',
+        chonk: '胖墩',
+        none: '无',
+        crown: '王冠',
+        tophat: '高礼帽',
+        propeller: '螺旋桨帽',
+        halo: '光环',
+        wizard: '巫师帽',
+        beanie: '毛线帽',
+        tinyduck: '小黄鸭',
+        DEBUGGING: '调试',
+        PATIENCE: '耐心',
+        CHAOS: '混乱',
+        WISDOM: '智慧',
+        SNARK: '吐槽',
+      },
+    };
+
+    const previewStatus = document.getElementById('previewStatus');
+    const searchStatus = document.getElementById('searchStatus');
+    const previewContainer = document.getElementById('previewContainer');
+    const resultsContainer = document.getElementById('results');
+    const langSelect = document.getElementById('langSelect');
+    let currentLang = 'en';
+    let lastMeta = null;
+    let lastSearchFilters = null;
+    let animationEnabled = true;
+    let blinkEnabled = true;
+    let previewAnimationTimer = null;
+    let previewBlinkTimer = null;
+    let currentPreviewPayload = null;
+    let currentBinary = null;
+
+    function t(key) {
+      return i18n[currentLang][key];
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+      document.getElementById('langLabel').textContent = t('langLabel');
+      document.getElementById('heroTitle').textContent = t('heroTitle');
+      document.getElementById('heroDesc').textContent = t('heroDesc');
+      document.getElementById('controlsTitle').textContent = t('controlsTitle');
+      document.getElementById('userIdLabel').textContent = t('userIdLabel');
+      document.getElementById('saltLabel').textContent = t('saltLabel');
+      document.getElementById('previewBtn').textContent = t('previewBtn');
+      document.getElementById('userHint').textContent = t('userHint');
+      document.getElementById('speciesLabel').textContent = t('speciesLabel');
+      document.getElementById('rarityLabel').textContent = t('rarityLabel');
+      document.getElementById('eyeLabel').textContent = t('eyeLabel');
+      document.getElementById('hatLabel').textContent = t('hatLabel');
+      document.getElementById('attemptsLabel').textContent = t('attemptsLabel');
+      document.getElementById('minStatLabel').textContent = t('minStatLabel');
+      document.getElementById('prefixLabel').textContent = t('prefixLabel');
+      document.getElementById('shinyLabel').textContent = t('shinyLabel');
+      document.getElementById('searchBtn').textContent = t('searchBtn');
+      document.getElementById('previewTitle').textContent = t('previewTitle');
+      document.getElementById('resultsTitle').textContent = t('resultsTitle');
+      document.getElementById('userId').placeholder = t('userIdPlaceholder');
+      optionFill(document.getElementById('species'), lastMeta?.species || [], true, document.getElementById('species').value);
+      optionFill(document.getElementById('rarity'), lastMeta?.rarities || [], true, document.getElementById('rarity').value);
+      optionFill(document.getElementById('eye'), lastMeta?.eyes || [], true, document.getElementById('eye').value);
+      optionFill(document.getElementById('hat'), lastMeta?.hats || [], true, document.getElementById('hat').value);
+      if (!previewContainer.innerHTML) {
+        previewStatus.textContent = t('loadingMeta');
+      }
+      if (!resultsContainer.innerHTML) {
+        searchStatus.textContent = t('noSearchYet');
+      }
+      renderBinaryStatus();
+    }
+
+    function optionText(value) {
+      return optionLabels[currentLang]?.[value] || value;
+    }
+
+    function optionFill(select, values, includeAny = true, selectedValue = '') {
+      select.innerHTML = '';
+      if (includeAny) {
+        const any = document.createElement('option');
+        any.value = '';
+        any.textContent = t('any');
+        select.appendChild(any);
+      }
+      for (const value of values) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = optionText(value);
+        if (value === selectedValue) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      }
+      if (includeAny && !selectedValue) {
+        select.value = '';
+      }
+    }
+
+    function renderBuddyCard(payload) {
+      const buddy = payload.buddy;
+      const statsHtml = Object.entries(buddy.stats).map(([name, value]) => `
+        <div class="stat">
+          <span>${optionText(name)}</span>
+          <div class="bar"><span style="width:${value}%"></span></div>
+          <span>${value}</span>
+        </div>
+      `).join('');
+
+      return `
+        <div class="preview-tools">
+          <button type="button" id="toggleAnimationBtn" class="pill">${animationEnabled ? t('animationOn') : t('animationOff')}</button>
+          <button type="button" id="toggleBlinkBtn" class="pill">${blinkEnabled ? t('blinkOn') : t('blinkOff')}</button>
+          <button type="button" id="applyPreviewBtn" class="pill">${t('useThisBuddy')}</button>
+        </div>
+        <div class="preview-card">
+          <div class="ascii ${buddy.shiny ? 'shiny' : ''}" id="previewAscii">${(payload.sprite || [payload.face || buddy.species]).join('\n')}</div>
+          <div>
+            <div class="meta-line"><strong>${t('userIdMeta')}:</strong> ${payload.userId}</div>
+            <div class="meta-line"><strong>${t('saltMeta')}:</strong> ${payload.salt}</div>
+            <div class="meta-line"><strong>${t('speciesMeta')}:</strong> ${optionText(buddy.species)}</div>
+            <div class="meta-line"><strong>${t('rarityMeta')}:</strong> ${optionText(buddy.rarity)}</div>
+            <div class="meta-line"><strong>${t('eyeMeta')}:</strong> ${buddy.eye}</div>
+            <div class="meta-line"><strong>${t('hatMeta')}:</strong> ${optionText(buddy.hat)}</div>
+            <div class="meta-line"><strong>${t('shinyMeta')}:</strong> ${buddy.shiny ? t('shinyYes') : t('shinyNo')}</div>
+            <div class="stats">${statsHtml}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderBinaryStatus() {
+      let container = document.getElementById('binaryStatus');
+      if (!container) return;
+      if (!currentBinary) {
+        container.innerHTML = `
+          <div class="binary-box">
+            <div><strong>${t('binaryTitle')}</strong></div>
+            <div style="margin-top:8px;">${t('binaryMissing')}</div>
+            <div class="binary-actions">
+              <button type="button" id="refreshBinaryBtn">${t('binaryRefresh')}</button>
+            </div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="binary-box">
+            <div><strong>${t('binaryTitle')}</strong></div>
+            <div>${t('binaryPath')}: ${currentBinary.path}</div>
+            <div>${t('binarySalt')}: ${currentBinary.currentSalt}</div>
+            <div>${t('binaryOriginal')}: ${currentBinary.originalSaltRecorded || '-'}</div>
+            <div class="binary-actions">
+              <button type="button" id="refreshBinaryBtn">${t('binaryRefresh')}</button>
+              <button type="button" id="restoreBinaryBtn">${t('binaryRestore')}</button>
+            </div>
+          </div>
+        `;
+      }
+      document.getElementById('refreshBinaryBtn').addEventListener('click', () => {
+        loadBinaryStatus().catch(error => {
+          previewStatus.textContent = error.message;
+        });
+      });
+      const restoreButton = document.getElementById('restoreBinaryBtn');
+      if (restoreButton) {
+        restoreButton.addEventListener('click', async () => {
+          try {
+            const data = await fetchJson('/api/restore', { method: 'POST', body: JSON.stringify({}) });
+            previewStatus.textContent = `${t('restoreSuccess')} ${data.restoredSalt}`;
+            await loadBinaryStatus();
+          } catch (error) {
+            previewStatus.textContent = error.message;
+          }
+        });
+      }
+    }
+
+    function setPreviewAscii(lines, shiny) {
+      const el = document.getElementById('previewAscii');
+      if (!el) return;
+      el.textContent = lines.join('\n');
+      el.classList.toggle('shiny', !!shiny);
+    }
+
+    function stopPreviewAnimation() {
+      if (previewAnimationTimer) {
+        clearInterval(previewAnimationTimer);
+        previewAnimationTimer = null;
+      }
+      if (previewBlinkTimer) {
+        clearTimeout(previewBlinkTimer);
+        previewBlinkTimer = null;
+      }
+    }
+
+    function scheduleBlink(payload) {
+      if (!blinkEnabled || !payload?.blinkFrame) return;
+      const nextDelay = 2200 + Math.floor(Math.random() * 2800);
+      previewBlinkTimer = setTimeout(() => {
+        setPreviewAscii(payload.blinkFrame, payload.buddy.shiny);
+        setTimeout(() => {
+          const frame = payload.spriteFrames?.[0] || payload.sprite || [payload.face || payload.buddy.species];
+          setPreviewAscii(frame, payload.buddy.shiny);
+          scheduleBlink(payload);
+        }, 160);
+      }, nextDelay);
+    }
+
+    function startPreviewAnimation(payload) {
+      stopPreviewAnimation();
+      if (!payload) return;
+      const baseFrame = payload.spriteFrames?.[0] || payload.sprite || [payload.face || payload.buddy.species];
+      setPreviewAscii(baseFrame, payload.buddy.shiny);
+
+      if (animationEnabled && payload.spriteFrames?.length > 1) {
+        let index = 0;
+        previewAnimationTimer = setInterval(() => {
+          index = (index + 1) % payload.spriteFrames.length;
+          setPreviewAscii(payload.spriteFrames[index], payload.buddy.shiny);
+        }, 500);
+      }
+
+      scheduleBlink(payload);
+    }
+
+    function parseMinStatClient(value) {
+      if (!value) return null;
+      const [rawName, rawThreshold] = value.split(':');
+      const name = String(rawName || '').trim().toUpperCase();
+      const threshold = Number(rawThreshold);
+      if (!name || !Number.isFinite(threshold)) {
+        return null;
+      }
+      return { name, threshold };
+    }
+
+    function matchFiltersClient(match, filters) {
+      const buddy = match.buddy;
+      if (filters.species && buddy.species !== filters.species) return false;
+      if (filters.rarity && buddy.rarity !== filters.rarity) return false;
+      if (filters.eye && buddy.eye !== filters.eye) return false;
+      if (filters.hat && buddy.hat !== filters.hat) return false;
+      if (filters.shiny && !buddy.shiny) return false;
+      if (filters.minStat && buddy.stats[filters.minStat.name] < filters.minStat.threshold) return false;
+      return true;
+    }
+
+    async function fetchJson(url, options = {}) {
+      const response = await fetch(url, {
+        headers: { 'Content-Type': 'application/json' },
+        ...options,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Request failed');
+      }
+      return data;
+    }
+
+    async function loadBinaryStatus() {
+      const data = await fetchJson('/api/binary');
+      currentBinary = data.binary;
+      renderBinaryStatus();
+    }
+
+    async function loadMeta() {
+      const meta = await fetchJson('/api/meta');
+      lastMeta = meta;
+      optionFill(document.getElementById('species'), meta.species);
+      optionFill(document.getElementById('rarity'), meta.rarities);
+      optionFill(document.getElementById('eye'), meta.eyes);
+      optionFill(document.getElementById('hat'), meta.hats);
+      document.getElementById('userId').value = meta.detectedUserId || '';
+      document.getElementById('salt').value = meta.defaultSalt;
+      previewStatus.textContent = meta.detectedUserId
+        ? t('loadedMeta')
+        : `${t('detectError')} ${meta.detectionError}`;
+      currentBinary = meta.binary;
+      renderBinaryStatus();
+    }
+
+    async function previewSalt(salt) {
+      previewStatus.textContent = t('previewing');
+      const payload = {
+        userId: document.getElementById('userId').value.trim(),
+        salt,
+      };
+      const data = await fetchJson('/api/preview', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      currentPreviewPayload = data;
+      previewContainer.innerHTML = renderBuddyCard(data);
+      document.getElementById('toggleAnimationBtn').addEventListener('click', () => {
+        animationEnabled = !animationEnabled;
+        document.getElementById('toggleAnimationBtn').textContent = animationEnabled ? t('animationOn') : t('animationOff');
+        startPreviewAnimation(currentPreviewPayload);
+      });
+      document.getElementById('toggleBlinkBtn').addEventListener('click', () => {
+        blinkEnabled = !blinkEnabled;
+        document.getElementById('toggleBlinkBtn').textContent = blinkEnabled ? t('blinkOn') : t('blinkOff');
+        startPreviewAnimation(currentPreviewPayload);
+      });
+      document.getElementById('applyPreviewBtn').addEventListener('click', async () => {
+        try {
+          const result = await fetchJson('/api/apply', {
+            method: 'POST',
+            body: JSON.stringify({ salt: currentPreviewPayload.salt }),
+          });
+          previewStatus.textContent = `${t('applySuccess')} ${result.oldSalt} -> ${result.newSalt}`;
+          await loadBinaryStatus();
+        } catch (error) {
+          previewStatus.textContent = error.message;
+        }
+      });
+      startPreviewAnimation(data);
+      previewStatus.textContent = t('previewUpdated');
+      document.getElementById('salt').value = salt;
+    }
+
+    async function search() {
+      searchStatus.textContent = t('searching');
+      resultsContainer.innerHTML = '';
+      lastSearchFilters = {
+        species: document.getElementById('species').value,
+        rarity: document.getElementById('rarity').value,
+        eye: document.getElementById('eye').value,
+        hat: document.getElementById('hat').value,
+        shiny: document.getElementById('shiny').checked,
+        minStat: parseMinStatClient(document.getElementById('minStat').value.trim()),
+      };
+      const payload = {
+        userId: document.getElementById('userId').value.trim(),
+        species: lastSearchFilters.species,
+        rarity: lastSearchFilters.rarity,
+        eye: lastSearchFilters.eye,
+        hat: lastSearchFilters.hat,
+        shiny: lastSearchFilters.shiny,
+        minStat: document.getElementById('minStat').value.trim(),
+        total: Number(document.getElementById('total').value || 500000),
+        prefix: document.getElementById('prefix').value.trim() || 'lab-',
+      };
+      const data = await fetchJson('/api/search', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      const filteredMatches = data.matches.filter(match => matchFiltersClient(match, lastSearchFilters));
+
+      if (!filteredMatches.length) {
+        searchStatus.textContent = t('noMatches');
+        return;
+      }
+
+      searchStatus.textContent = t('foundMatches')(filteredMatches.length, data.searched);
+      resultsContainer.innerHTML = filteredMatches.map(match => `
+        <div class="result-card">
+          <div class="ascii ${match.buddy.shiny ? 'shiny' : ''}" style="min-height:auto;font-size:13px;padding:10px;margin-bottom:10px;">${(match.sprite || [match.face || match.buddy.species]).join('\n')}</div>
+          <div class="salt">${match.salt}</div>
+          <div class="meta-line"><strong>${optionText(match.buddy.rarity)}</strong> ${match.buddy.shiny ? `${t('resultShiny')} ` : ''}${optionText(match.buddy.species)}</div>
+          <div class="meta-line">${t('resultEyeHat')(match.buddy.eye, optionText(match.buddy.hat))}</div>
+          <div class="meta-line">${t('resultTopStat')(optionText(Object.entries(match.buddy.stats).sort((a, b) => b[1] - a[1])[0][0]), Object.entries(match.buddy.stats).sort((a, b) => b[1] - a[1])[0][1])}</div>
+          <button type="button" data-salt="${match.salt}">${t('previewThis')}</button>
+          <button type="button" data-apply-salt="${match.salt}">${t('useThisBuddy')}</button>
+        </div>
+      `).join('');
+
+      for (const button of resultsContainer.querySelectorAll('button[data-salt]')) {
+        button.addEventListener('click', () => previewSalt(button.dataset.salt));
+      }
+      for (const button of resultsContainer.querySelectorAll('button[data-apply-salt]')) {
+        button.addEventListener('click', async () => {
+          try {
+            const result = await fetchJson('/api/apply', {
+              method: 'POST',
+              body: JSON.stringify({ salt: button.dataset.applySalt }),
+            });
+            searchStatus.textContent = `${t('applySuccess')} ${result.oldSalt} -> ${result.newSalt}`;
+            await loadBinaryStatus();
+          } catch (error) {
+            searchStatus.textContent = error.message;
+          }
+        });
+      }
+    }
+
+    document.getElementById('previewBtn').addEventListener('click', async () => {
+      try {
+        await previewSalt(document.getElementById('salt').value.trim());
+      } catch (error) {
+        previewStatus.textContent = error.message;
+      }
+    });
+
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      try {
+        await search();
+      } catch (error) {
+        searchStatus.textContent = error.message;
+      }
+    });
+
+    langSelect.addEventListener('change', event => {
+      setLanguage(event.target.value);
+      if (previewContainer.innerHTML && document.getElementById('salt').value.trim()) {
+        previewSalt(document.getElementById('salt').value.trim()).catch(error => {
+          previewStatus.textContent = error.message;
+        });
+      }
+      if (resultsContainer.innerHTML && lastSearchFilters) {
+        search().catch(error => {
+          searchStatus.textContent = error.message;
+        });
+      }
+    });
+
+    setLanguage(currentLang);
+    loadMeta().catch(error => {
+      previewStatus.textContent = error.message;
+    });
+  </script>
+</body>
+</html>
